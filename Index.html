@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>EL WEB</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+    }
+    header {
+      background-color: #19284c;
+      color: white;
+      padding: 15px 20px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    nav {
+      background-color: #19284c;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px 0;
+    }
+    nav a {
+      text-decoration: none;
+      color: #fff;
+      font-weight: bold;
+      padding: 8px 15px;
+      border-radius: 6px;
+    }
+    nav a:hover {
+      background-color: #e6e6e6;
+    }
+    .auth-container, .content {
+      max-width: 500px;
+      margin: 40px auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    input, textarea, button {
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4267B2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .toggle {
+      color: #333;
+      text-align: center;
+      margin-top: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .post {
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      position: relative;
+    }
+    .post small { color: gray; }
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    #navbar-section { display: none; }
+  </style>
+</head>
+<body><header id="navbar-section">WELCOME</header>
+<nav id="menu-nav" style="display:none;">
+  <a href="#" onclick="showPage('beranda')">Beranda</a>
+  <a href="#" onclick="showPage('profil')">Profil</a>
+  <a href="#" onclick="showPage('pesan')">Pesan</a>
+  <a href="#" onclick="showPage('cari')">Cari Pengguna</a>
+  <a href="#" onclick="logout()">Logout</a>
+</nav><div id="auth-page" class="auth-container">
+  <h2 id="form-title">Login</h2>
+  <input type="text" id="username" placeholder="Username" required>
+  <input type="email" id="email" placeholder="Email" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button onclick="handleAuth()">Masuk</button>
+  <div class="toggle" onclick="toggleForm()">Belum punya akun? Daftar di sini</div>
+</div><div class="content" id="beranda-section" style="display:none;">
+  <h3>Buat Postingan</h3>
+  <textarea id="postText" placeholder="Tulis sesuatu..."></textarea>
+  <button onclick="buatPosting()">Posting</button>
+  <div id="posts-area" style="margin-top:20px;"></div>
+</div><div class="content" id="profil-section" style="display:none;">
+  <h3>Profil Pengguna</h3>
+  <input type="file" accept="image/*" onchange="uploadFotoProfil(event)">
+  <img id="fotoProfil" src="" style="max-width:100%; margin-top:10px; display:none;">
+</div><div class="content" id="pesan-section" style="display:none;">
+  <h3>Pesan</h3>
+  <textarea id="balasPesan" placeholder="Tulis balasan pesan..."></textarea>
+  <button onclick="kirimPesan()">Kirim</button>
+  <div id="daftarPesan"></div>
+</div><div class="content" id="cari-section" style="display:none;">
+  <h3>Cari Pengguna</h3>
+  <input type="text" id="searchUser" placeholder="Masukkan nama pengguna..." oninput="cariPengguna()">
+  <ul id="hasilCari"></ul>
+</div><script>
+  let isLogin = true;
+  let usernameGlobal = "";
+
+  function toggleForm() {
+    isLogin = !isLogin;
+    document.getElementById("form-title").innerText = isLogin ? "Login" : "Registrasi";
+    document.querySelector(".toggle").innerText = isLogin ? "Belum punya akun? Daftar di sini" : "Sudah punya akun? Login di sini";
+  }
+
+  function handleAuth() {
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    if (!username || !email || !password) return alert("Isi semua kolom.");
+
+    const user = { username, email, password };
+
+    if (isLogin) {
+      const saved = JSON.parse(localStorage.getItem("user"));
+      if (saved && saved.email === email && saved.password === password) {
+        usernameGlobal = saved.username;
+        showSocialPage();
+      } else {
+        alert("Email atau password salah.");
+      }
+    } else {
+      localStorage.setItem("user", JSON.stringify(user));
+      alert("Registrasi berhasil! Silakan login.");
+      toggleForm();
+    }
+  }
+
+  function showSocialPage() {
+    document.getElementById("auth-page").style.display = "none";
+    document.getElementById("navbar-section").style.display = "block";
+    document.getElementById("menu-nav").style.display = "flex";
+    showPage('beranda');
+  }
+
+  function logout() {
+    location.reload();
+  }
+
+  function showPage(page) {
+    ['beranda', 'profil', 'pesan', 'cari'].forEach(p => {
+      document.getElementById(`${p}-section`).style.display = (p === page ? 'block' : 'none');
+    });
+  }
+
+  function buatPosting() {
+    const teks = document.getElementById("postText").value.trim();
+    if (!teks) return alert("Tulis sesuatu dulu.");
+    const waktu = new Date().toLocaleString();
+    const postId = "post-" + Date.now();
+    const postDiv = document.createElement("div");
+    postDiv.className = "post";
+    postDiv.id = postId;
+    postDiv.innerHTML = `
+      <button class="delete-btn" onclick="hapusPosting('${postId}')">Hapus</button>
+      <strong>${usernameGlobal}</strong><br>
+      <small>${waktu}</small>
+      <p>${teks}</p>
+    `;
+    const area = document.getElementById("posts-area");
+    area.insertBefore(postDiv, area.firstChild);
+    document.getElementById("postText").value = "";
+  }
+
+  function hapusPosting(id) {
+    if (confirm("Yakin ingin menghapus postingan ini?")) {
+      document.getElementById(id).remove();
+    }
+  }
+
+  function uploadFotoProfil(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = document.getElementById("fotoProfil");
+      img.src = e.target.result;
+      img.style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  }
+
+  function cariPengguna() {
+    const keyword = document.getElementById("searchUser").value.toLowerCase();
+    const user = JSON.parse(localStorage.getItem("user"));
+    const hasil = document.getElementById("hasilCari");
+    hasil.innerHTML = "";
+    if (user && user.username.toLowerCase().includes(keyword)) {
+      hasil.innerHTML = `<li>${user.username}</li>`;
+    }
+  }
+
+  function kirimPesan() {
+    const isi = document.getElementById("balasPesan").value.trim();
+    if (!isi) return;
+    const pesan = document.createElement("div");
+    pesan.innerHTML = `<strong>${usernameGlobal}</strong>: ${isi}`;
+    document.getElementById("daftarPesan").appendChild(pesan);
+    document.getElementById("balasPesan").value = "";
+  }
+</script></body>
+</html>
